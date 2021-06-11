@@ -42,7 +42,7 @@ Errors are returned in JSON objects in the following format:
 
 ## Endpoints
 
-#GET /categories
+## GET /categories
 
 -Returns a list of categories, success value, and number of total categories
 
@@ -61,7 +61,7 @@ curl http://localhost:5000/categories
 }
 
 
-#GET /questions
+## GET /questions
 
 -Returns a list of questions, categories, current category, success value, and total number of questions.
 -Questions are paginated 10 at a time
@@ -166,7 +166,7 @@ curl http://localhost:5000/questions
 }
 
 
-# DELETE questions/<question_id>
+## DELETE questions/<question_id>
 -Deletes question that has id question_id (user choice) from the list of questions
 -Returns success value and id of the deleted question
 
@@ -178,7 +178,7 @@ curl -X DELETE http://localhost:3000/questions/10
 }
 
 
-# POST questions
+## POST questions
 -Creates a new question, taking in the question, answer, category, and difficulty score
 -Must contain question and answer
 
@@ -193,7 +193,7 @@ curl -X POST http://localhost:5000/questions -H "Content-Type: application/json"
 }
 
 
-# POST questions/search
+## POST questions/search
 -Searches a question, querying through database for words that contain the substring
 -Returns the list of matches, along with the amount of matches
 -Sends error if no matches
@@ -207,7 +207,7 @@ curl -X POST http://localhost:5000/questions/search -H "Content-Type: applicatio
 }
 
 
-# GET categories/<id>/questions 
+## GET categories/<id>/questions 
 -Gets questions in category that has id.
 -Returns list of questions in that selected category, with pagination of 10
 
@@ -236,8 +236,7 @@ curl http://localhost:5000/categories/1/questions
 }
   
   
-  
-# POST quizzes
+## POST quizzes
 -Plays quiz of selected category
 -Returns success value and random question in that category that has also not been seen before
 
