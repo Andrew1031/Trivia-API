@@ -43,14 +43,15 @@ def create_app(test_config=None):
   @app.route('/categories')
   def getCategories():
     try:
-      categories = Category.query().all()
+      categories = Category.query.all()
       categories_dict = {}
       for category in categories:
         categories_dict[category.id] = category.type
 
       return jsonify({
         'success': True,
-        'categories': categories
+        'categories': categories_dict,
+        'total_categories': len(categories_dict)
       })
     except:
       abort(404)
@@ -71,8 +72,10 @@ def create_app(test_config=None):
   @app.route('/questions')
   def getQuestions():
     try:
-      questions = Question.query().order_by(Question.id).all()
-      categories = Category.query().all()
+      questions = Question.query.order_by(Question.id).all()
+      if len(questions) == 0:
+        abort(404)
+      categories = Category.query.all()
       questions_listings = paginate_questions(request, questions)
       categories_dict = {}
       current_categories = []
@@ -80,6 +83,8 @@ def create_app(test_config=None):
         current_categories.append(question['category'])
       for category in categories:
         categories_dict[category.id] = category.type
+      if len(current_categories) == 0:
+        abort(404)
       return jsonify({
         'success': True,
         'questions': questions_listings,
@@ -101,7 +106,9 @@ def create_app(test_config=None):
   @app.route('/questions/<int:question_id>', methods=['DELETE'])
   def deleteQuestion(question_id):
     try:
-      questionToDelete = Question.query().filter_by(id=question_id).first()
+      questionToDelete = Question.query.filter_by(id=question_id).first()
+      if questionToDelete == None:
+        abort(404)
       questionToDelete.delete()
       return jsonify({
         'success': True,
@@ -120,7 +127,7 @@ def create_app(test_config=None):
   the form will clear and the question will appear at the end of the last page
   of the questions list in the "List" tab.  
   '''
-  @app.route('/questions/add', methods=['POST'])
+  @app.route('/questions', methods=['POST'])
   def createQuestion():
     try:
       body = request.get_json()
@@ -128,6 +135,9 @@ def create_app(test_config=None):
       answer = body.get('answer', None)
       category = body.get('category', None)
       difficulty = body.get('difficulty', None)
+      if body.get('question') == '' or body.get('answer') == '':
+        abort(422)
+
       question = Question(question=question, answer=answer,category=category,difficulty=difficulty)
       question.insert()
 
@@ -135,6 +145,7 @@ def create_app(test_config=None):
         'success': True,
         'created': question.id,
         'question': question.question,
+        'category': question.category,
         'total_questions': len(Question.query.all())
       })
     except:
@@ -158,7 +169,9 @@ def create_app(test_config=None):
     try:
       searchQuestions = Question.query.order_by(Question.id).\
         filter(Question.question.ilike('%{}%'.format(searchWord))).all()
-      paginatedQuestions = paginate_questions(request,searchQuestions)
+      if len(searchQuestions) == 0:
+        abort(404)
+      paginatedQuestions = paginate_questions(request, searchQuestions)
       return jsonify({
         'success': True,
         'questions': paginatedQuestions,
@@ -176,10 +189,10 @@ def create_app(test_config=None):
   categories in the left column will cause only questions of that 
   category to be shown. 
   '''
-  @app.route('/category/<int:id>/questions', methods=['GET'])
+  @app.route('/categories/<int:id>/questions', methods=['GET'])
   def getCategoryQuestions(id):
     try:
-      questions = Question.query.order_by(Question.id).filter_by(category=id).all()
+      questions = Question.query.filter_by(category=id).all()
       paginatedQuestions = paginate_questions(request, questions)
       return jsonify({
         'success': True,
@@ -188,7 +201,7 @@ def create_app(test_config=None):
         'total_questions': len(questions)
       })
     except:
-      abort(500)
+      abort(404)
   '''
   @TODO: 
   Create a POST endpoint to get questions to play the quiz. 
@@ -200,15 +213,80 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
+  @app.route('/quizzes', methods=['POST'])
+  def getQuiz():
+    try:
+      body = request.get_json()
+      category = body.get('quiz_category', None)
+      previous_questions = body.get('previous_questions', None)
+      if category is None:
+        abort(404)
+      if category['id'] != 0:
+        select = Question.query.filter_by(category=category['id']).all()
+      else:
+        select = Question.query.all()
 
+      def getRandomQuestion():
+        question = random.choice(select).format()
+        return question
 
+      def checkUsed(question):
+        used = False
+        for prev_question in previous_questions:
+          if (prev_question == question):
+            used = True
+        return used
+
+      next_question = getRandomQuestion()
+      while (checkUsed(next_question)):
+        next_question = getRandomQuestion()
+
+      return jsonify({
+        'success': True,
+        'question': next_question
+      })
+
+    except:
+      abort(404)
 
   '''
   @TODO: 
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
-  
+
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify({
+      "success": False,
+      "error": 404,
+      "message": "Not found"
+    }), 404
+
+  @app.errorhandler(400)
+  def bad_request(error):
+    return jsonify({
+      "success": False,
+      "error": 400,
+      "message": "resource not found"
+    }), 400
+
+  @app.errorhandler(422)
+  def unprocessable(error):
+    return jsonify({
+      "success": False,
+      "error": 422,
+      "message": "unprocessable"
+    }), 422
+
+  @app.errorhandler(500)
+  def internal_server_error(error):
+    return jsonify({
+      "success": False,
+      "error": 500,
+      "message": "internal server error"
+    }), 500
+
   return app
 
     
