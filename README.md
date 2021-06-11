@@ -31,6 +31,8 @@ python test_flaskr.py
 ## Getting Started
 
 -Base URL: At present, this app can only be run locally through http://localhost:3000/ 
+
+
 -Authentication: Currently no authentication is required.
 
 ## Error Handling
@@ -39,9 +41,15 @@ Errors are returned in JSON objects in the following format:
 
 {
 "success": False,
+
+
 "error": 404,
+
+
 "message": "Not found"
 }
+
+
 
 4 error types : 400, 402, 404, 500
 
