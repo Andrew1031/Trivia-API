@@ -215,35 +215,32 @@ def create_app(test_config=None):
   '''
   @app.route('/quizzes', methods=['POST'])
   def getQuiz():
+    def checkUsed(question):
+      used = False
+      if question.id in previous_questions:
+        used = True
+  
+      return used
+
     try:
       body = request.get_json()
-      category = body.get('quiz_category', None)
-      previous_questions = body.get('previous_questions', None)
+      category = body.get('quiz_category')
+      previous_questions = body.get('previous_questions')
+
       if category is None:
         abort(404)
+
       if category['id'] != 0:
         select = Question.query.filter_by(category=category['id']).all()
       else:
         select = Question.query.all()
 
-      def getRandomQuestion():
-        question = random.choice(select).format()
-        return question
-
-      def checkUsed(question):
-        used = False
-        for prev_question in previous_questions:
-          if (prev_question == question):
-            used = True
-        return used
-
-      next_question = getRandomQuestion()
+      next_question = select[random.randrange(0, len(select), 1)]
       while (checkUsed(next_question)):
-        next_question = getRandomQuestion()
-
+        next_question = select[random.randrange(0, len(select), 1)]
       return jsonify({
         'success': True,
-        'question': next_question
+        'question': next_question.format()
       })
 
     except:
